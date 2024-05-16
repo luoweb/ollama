@@ -342,8 +342,9 @@ jobs:
 
   # Linux x86 assets built using the container based build
   build-linux-amd64:
-    environment: release
-    runs-on: linux
+    # environment: release
+    # runs-on: linux
+    runs-on: ubuntu-latest
     env:
       OLLAMA_SKIP_MANIFEST_CREATE: '1'
       BUILD_ARCH: amd64
@@ -430,8 +431,9 @@ jobs:
       # - build-windows
       - build-linux-amd64
       # - build-linux-arm64
-    runs-on: linux
-    environment: release
+    # runs-on: linux
+    runs-on: ubuntu-latest
+    # environment: release
     permissions:
       contents: write
     env:

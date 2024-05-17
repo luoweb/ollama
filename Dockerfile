@@ -10,7 +10,7 @@ COPY .git .git
 COPY .gitmodules .gitmodules
 COPY llm llm
 
-FROM --platform=linux/x86_64 nvidia/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
+FROM --platform=linux/x86_64 quay.io/luweb/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
 ARG CMAKE_VERSION
 COPY ./scripts/rh_linux_deps.sh /
 RUN CMAKE_VERSION=${CMAKE_VERSION} sh /rh_linux_deps.sh

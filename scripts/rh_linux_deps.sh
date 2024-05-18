@@ -20,9 +20,12 @@ if grep -i "centos" /etc/system-release >/dev/null; then
     fi
     # dnf install -y devtoolset-10-gcc devtoolset-10-gcc-c++
     dnf install -y devtoolset-8-gcc devtoolset-8-gcc-c++ wget
+    rm -rf /usr/bin/cmake
     wget https://cmake.org/files/v3.22/cmake-3.22.1-linux-x86_64.sh && chmod +x *.sh && \
     ./cmake-3.22.1-linux-x86_64.sh --skip-license --prefix=/usr/local/
+    ln -s /usr/local/bin/cmake /usr/bin/cmake
     cmake --version
+    command -v g++ gcc nvcc cmake
 elif grep -i "rocky" /etc/system-release >/dev/null; then
     # Temporary workaround until rocky 8 AppStream ships GCC 10.4 (10.3 is incompatible with NVCC)
     cat << EOF > /etc/yum.repos.d/Rocky-Vault.repo

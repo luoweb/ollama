@@ -14,11 +14,7 @@ COPY llm llm
 FROM --platform=linux/x86_64 quay.io/luweb/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
 ARG CMAKE_VERSION
 COPY ./scripts/rh_linux_deps.sh /
-RUN CMAKE_VERSION=${CMAKE_VERSION} sh -x /rh_linux_deps.sh
-# RUN apt-get update -y && \
-#     apt-get install --no-install-recommends -y g++-8 gcc-8 && rm -rf /var/lib/apt/lists/*  && \
-#     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 20 && \
-#     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 20 
+RUN CMAKE_VERSION=${CMAKE_VERSION} sh /rh_linux_deps.sh
 ENV PATH /opt/rh/devtoolset-10/root/usr/bin:$PATH
 COPY --from=llm-code / /go/src/github.com/ollama/ollama/
 WORKDIR /go/src/github.com/ollama/ollama/llm/generate

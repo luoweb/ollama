@@ -1,11 +1,12 @@
-name: release
+name: custom
 
 on:
   push:
     tags:
       - 'v*'
     branches:
-      - main
+      # - main
+      - release
   workflow_dispatch:
           inputs:
               buildos:
@@ -111,7 +112,7 @@ jobs:
       # - build-darwin
       # - build-windows
       - build-linux-amd64
-      - build-linux-arm64
+      # - build-linux-arm64
     runs-on: ubuntu-latest
     environment: release
     permissions:

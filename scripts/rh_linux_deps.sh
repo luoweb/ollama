@@ -10,10 +10,14 @@ if grep -i "centos" /etc/system-release >/dev/null; then
     # uninstall and ignore failures
     yum remove -y git
     yum -y install epel-release centos-release-scl
-    yum -y install dnf
+    yum -y install dnf wget
+    
     if [ "${MACHINE}" = "x86_64" ]; then
         yum -y install https://repo.ius.io/ius-release-el7.rpm
         dnf install -y git236
+        wget https://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-rhel7-10-1-local-10.1.243-418.87.00-1.0-1.x86_64.rpm
+        rpm -i cuda-repo-rhel7-10-1-local-10.1.243-418.87.00-1.0-1.x86_64.rpm
+        ls -l /usr/local/
     else
         dnf install -y rh-git227-git
         ln -s /opt/rh/rh-git227/root/usr/bin/git /usr/local/bin/git
@@ -30,7 +34,7 @@ enabled=1
 countme=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
 EOF
-    dnf install -y git \
+    dnf install -y git wget \
         gcc-toolset-10-gcc-10.2.1-8.2.el8 \
         gcc-toolset-10-gcc-c++-10.2.1-8.2.el8
 else

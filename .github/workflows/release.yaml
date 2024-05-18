@@ -363,6 +363,7 @@ jobs:
     environment: release
     runs-on: ubuntu-latest
     env:
+      DOCKER_ORG: ${{ vars.DOCKER_USER }}
       OLLAMA_SKIP_MANIFEST_CREATE: '1'
       BUILD_ARCH: amd64
       PUSH: '1'
@@ -381,7 +382,6 @@ jobs:
       - run: |
           ./scripts/build_linux.sh
           ./scripts/build_docker.sh
-          mv dist/deps/* dist/
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux-amd64
@@ -454,6 +454,7 @@ jobs:
     permissions:
       contents: write
     env:
+      DOCKER_ORG: ${{ vars.DOCKER_USER }}
       OLLAMA_SKIP_IMAGE_BUILD: '1'
       PUSH: '1'
     steps:

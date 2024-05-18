@@ -44,6 +44,7 @@ jobs:
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
       - run: |
           ./scripts/build_linux.sh
+          sed -i 's#CUDA_VERSION=11.3.1#CUDA_VERSION=10.1#g' Dockerfile
           ./scripts/build_docker.sh
       - uses: actions/upload-artifact@v4
         with:

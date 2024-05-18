@@ -10,7 +10,7 @@ if grep -i "centos" /etc/system-release >/dev/null; then
     # uninstall and ignore failures
     yum remove -y git
     yum -y install epel-release centos-release-scl
-    yum -y install dnf cmake
+    yum -y install dnf
     if [ "${MACHINE}" = "x86_64" ]; then
         yum -y install https://repo.ius.io/ius-release-el7.rpm
         dnf install -y git236

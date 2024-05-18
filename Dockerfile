@@ -13,7 +13,7 @@ COPY llm llm
 FROM --platform=linux/x86_64 quay.io/luweb/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
 ARG CMAKE_VERSION
 COPY ./scripts/rh_linux_deps.sh /
-RUN CMAKE_VERSION=${CMAKE_VERSION} sh /rh_linux_deps.sh
+RUN CMAKE_VERSION=${CMAKE_VERSION} sh -x /rh_linux_deps.sh
 ENV PATH /opt/rh/devtoolset-10/root/usr/bin:$PATH
 COPY --from=llm-code / /go/src/github.com/ollama/ollama/
 WORKDIR /go/src/github.com/ollama/ollama/llm/generate

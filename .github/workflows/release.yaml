@@ -347,6 +347,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OLLAMA_SKIP_MANIFEST_CREATE: '1'
+      DOCKER_ORG: ${{ vars.DOCKER_USER }}
       BUILD_ARCH: amd64
       PUSH: '1'
     steps:
@@ -447,6 +448,7 @@ jobs:
       contents: write
     env:
       OLLAMA_SKIP_IMAGE_BUILD: '1'
+      DOCKER_ORG: ${{ vars.DOCKER_USER }}
       PUSH: '1'
     steps:
       - uses: actions/checkout@v4

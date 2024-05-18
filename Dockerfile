@@ -2,8 +2,9 @@ ARG GOLANG_VERSION=1.22.1
 ARG CMAKE_VERSION=3.22.1
 # ARG CMAKE_VERSION=3.14.2
 # this CUDA_VERSION corresponds with the one specified in docs/gpu.md
-ARG CUDA_VERSION=10.1
-ARG ROCM_VERSION=6.0.2
+ARG CUDA_VERSION=11.3.1
+# ARG CUDA_VERSION=10.1
+# ARG ROCM_VERSION=6.0.2
 
 # Copy the minimal context we need to run the generate scripts
 FROM scratch AS llm-code
@@ -11,7 +12,8 @@ COPY .git .git
 COPY .gitmodules .gitmodules
 COPY llm llm
 
-FROM --platform=linux/amd64 quay.io/luweb/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
+# FROM --platform=linux/amd64 quay.io/luweb/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
+FROM --platform=linux/amd64 nvidia/cuda:$CUDA_VERSION-devel-centos7 AS cuda-build-amd64
 ARG CMAKE_VERSION
 COPY ./scripts/rh_linux_deps.sh /
 RUN CMAKE_VERSION=${CMAKE_VERSION} sh /rh_linux_deps.sh

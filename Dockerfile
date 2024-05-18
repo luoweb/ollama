@@ -100,7 +100,7 @@ COPY --from=cuda-build-amd64 /go/src/github.com/ollama/ollama/llm/build/linux/ l
 # COPY --from=rocm-build-amd64 /go/src/github.com/ollama/ollama/dist/deps/ ./dist/deps/
 ARG GOFLAGS
 ARG CGO_CFLAGS
-RUN go build -trimpath .
+RUN mkdir -p /go/src/github.com/ollama/ollama/dist/deps/ && go build -trimpath .
 
 # Intermediate stage used for ./scripts/build_linux.sh
 # FROM --platform=linux/arm64 cpu-build-arm64 AS build-arm64

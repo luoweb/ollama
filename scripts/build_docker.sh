@@ -41,37 +41,37 @@ if [ -z "${OLLAMA_SKIP_IMAGE_BUILD}" ]; then
             .
     done
 
-    if echo ${BUILD_ARCH} | grep "amd64" > /dev/null; then
-        docker build \
-            ${LOAD_OR_PUSH} \
-            --platform=linux/amd64 \
-            --build-arg=VERSION \
-            --build-arg=GOFLAGS \
-            --target runtime-rocm \
-            -f Dockerfile \
-            -t ${RELEASE_IMAGE_REPO}:$VERSION-rocm \
-            .
-    fi
+    # if echo ${BUILD_ARCH} | grep "amd64" > /dev/null; then
+    #     docker build \
+    #         ${LOAD_OR_PUSH} \
+    #         --platform=linux/amd64 \
+    #         --build-arg=VERSION \
+    #         --build-arg=GOFLAGS \
+    #         --target runtime-rocm \
+    #         -f Dockerfile \
+    #         -t ${RELEASE_IMAGE_REPO}:$VERSION-rocm \
+    #         .
+    # fi
 fi
 
 if [ -z "${OLLAMA_SKIP_MANIFEST_CREATE}" ]; then
     if [ -n "${PUSH}" ]; then
         docker manifest create ${FINAL_IMAGE_REPO}:$VERSION \
             ${RELEASE_IMAGE_REPO}:$VERSION-amd64 \
-            ${RELEASE_IMAGE_REPO}:$VERSION-arm64
+            # ${RELEASE_IMAGE_REPO}:$VERSION-arm64
         docker manifest push ${FINAL_IMAGE_REPO}:$VERSION
 
         # For symmetry, tag/push the rocm image
-        if [ "${RELEASE_IMAGE_REPO}" != "${FINAL_IMAGE_REPO}" ]; then
-            echo "Tagging and pushing rocm image"
-            docker pull ${RELEASE_IMAGE_REPO}:$VERSION-rocm
-            docker tag ${RELEASE_IMAGE_REPO}:$VERSION-rocm ${FINAL_IMAGE_REPO}:$VERSION-rocm
-            docker push ${FINAL_IMAGE_REPO}:$VERSION-rocm
-        fi
+        # if [ "${RELEASE_IMAGE_REPO}" != "${FINAL_IMAGE_REPO}" ]; then
+        #     echo "Tagging and pushing rocm image"
+        #     docker pull ${RELEASE_IMAGE_REPO}:$VERSION-rocm
+        #     docker tag ${RELEASE_IMAGE_REPO}:$VERSION-rocm ${FINAL_IMAGE_REPO}:$VERSION-rocm
+        #     docker push ${FINAL_IMAGE_REPO}:$VERSION-rocm
+        # fi
     else
         echo "Skipping manifest generation when not pushing images are available locally as "
         echo "  ${RELEASE_IMAGE_REPO}:$VERSION-amd64"
-        echo "  ${RELEASE_IMAGE_REPO}:$VERSION-arm64"
-        echo "  ${RELEASE_IMAGE_REPO}:$VERSION-rocm"
+        # echo "  ${RELEASE_IMAGE_REPO}:$VERSION-arm64"
+        # echo "  ${RELEASE_IMAGE_REPO}:$VERSION-rocm"
     fi
 fi

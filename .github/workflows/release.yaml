@@ -4,10 +4,24 @@ on:
   push:
     tags:
       - 'v*'
-
+    branches:
+      - main
+  workflow_dispatch:
+          inputs:
+              buildos:
+                  description: 'os version to build this image with.'
+                  type: choice
+                  required: true
+                  default: ''
+                  options:
+                      - 'macos-12'
+                      - 'windows'
+                      - 'linux-amd64'
+                      - 'linux-arm64'
 jobs:
   # Full build of the Mac assets
   build-darwin:
+    if: ${{github.event.inputs.buildos}} == 'macos-12'
     runs-on: macos-12
     environment: release
     steps:
@@ -53,6 +67,7 @@ jobs:
   # Windows builds take a long time to both install the dependencies and build, so parallelize
   # CPU generation step
   generate-windows-cpu:
+    if: ${{github.event.inputs.buildos}} == 'windows'
     environment: release
     runs-on: windows
     env:
@@ -107,6 +122,7 @@ jobs:
 
   # ROCm generation step
   generate-windows-rocm:
+    if: ${{github.event.inputs.buildos}} == 'windows'
     environment: release
     runs-on: windows
     env:
@@ -184,6 +200,7 @@ jobs:
 
   # CUDA generation step
   generate-windows-cuda:
+    if: ${{github.event.inputs.buildos}} == 'windows'
     environment: release
     runs-on: windows
     env:
@@ -266,6 +283,7 @@ jobs:
 
   # Import the prior generation steps and build the final windows assets
   build-windows:
+    if: ${{github.event.inputs.buildos}} == 'windows'
     environment: release
     runs-on: windows
     needs:
@@ -341,6 +359,7 @@ jobs:
 
   # Linux x86 assets built using the container based build
   build-linux-amd64:
+    # if: ${{github.event.inputs.buildos}} == 'linux-amd64'
     environment: release
     runs-on: linux
     env:
@@ -373,6 +392,7 @@ jobs:
   # Linux ARM assets built using the container based build
   # (at present, docker isn't pre-installed on arm ubunutu images)
   build-linux-arm64:
+    if: ${{github.event.inputs.buildos}} == 'linux-arm64'
     environment: release
     runs-on: linux-arm64
     env:

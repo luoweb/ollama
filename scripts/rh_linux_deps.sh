@@ -10,7 +10,7 @@ if grep -i "centos" /etc/system-release >/dev/null; then
     # uninstall and ignore failures
     yum remove -y git
     yum -y install epel-release centos-release-scl
-    yum -y install dnf
+    yum -y install dnf cmake
     if [ "${MACHINE}" = "x86_64" ]; then
         yum -y install https://repo.ius.io/ius-release-el7.rpm
         dnf install -y git236
@@ -19,7 +19,7 @@ if grep -i "centos" /etc/system-release >/dev/null; then
         ln -s /opt/rh/rh-git227/root/usr/bin/git /usr/local/bin/git
     fi
     # dnf install -y devtoolset-10-gcc devtoolset-10-gcc-c++
-    dnf install -y devtoolset-8-gcc devtoolset-8-gcc-c++
+    dnf install -y devtoolset-8-gcc devtoolset-8-gcc-c++ cmake
 elif grep -i "rocky" /etc/system-release >/dev/null; then
     # Temporary workaround until rocky 8 AppStream ships GCC 10.4 (10.3 is incompatible with NVCC)
     cat << EOF > /etc/yum.repos.d/Rocky-Vault.repo

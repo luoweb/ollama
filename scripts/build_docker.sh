@@ -58,7 +58,7 @@ if [ -z "${OLLAMA_SKIP_MANIFEST_CREATE}" ]; then
     if [ -n "${PUSH}" ]; then
         docker manifest create ${FINAL_IMAGE_REPO}:$VERSION \
             ${RELEASE_IMAGE_REPO}:$VERSION-amd64 \
-            # ${RELEASE_IMAGE_REPO}:$VERSION-arm64
+            ${RELEASE_IMAGE_REPO}:$VERSION-arm64
         docker manifest push ${FINAL_IMAGE_REPO}:$VERSION
 
         # For symmetry, tag/push the rocm image
@@ -71,7 +71,7 @@ if [ -z "${OLLAMA_SKIP_MANIFEST_CREATE}" ]; then
     else
         echo "Skipping manifest generation when not pushing images are available locally as "
         echo "  ${RELEASE_IMAGE_REPO}:$VERSION-amd64"
-        # echo "  ${RELEASE_IMAGE_REPO}:$VERSION-arm64"
+        echo "  ${RELEASE_IMAGE_REPO}:$VERSION-arm64"
         # echo "  ${RELEASE_IMAGE_REPO}:$VERSION-rocm"
     fi
 fi

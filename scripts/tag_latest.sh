@@ -16,8 +16,8 @@ PUSH=${PUSH:-""}
 echo "Assembling manifest and tagging latest"
 docker manifest rm ${FINAL_IMAGE_REPO}:latest || true
 docker manifest create ${FINAL_IMAGE_REPO}:latest \
-    ${RELEASE_IMAGE_REPO}:$VERSION-amd64
-    # ${RELEASE_IMAGE_REPO}:$VERSION-arm64
+    ${RELEASE_IMAGE_REPO}:$VERSION-amd64 \
+    ${RELEASE_IMAGE_REPO}:$VERSION-arm64
 
 # docker pull ${RELEASE_IMAGE_REPO}:$VERSION-rocm
 # docker tag ${RELEASE_IMAGE_REPO}:$VERSION-rocm ${FINAL_IMAGE_REPO}:rocm

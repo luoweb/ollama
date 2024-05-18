@@ -361,7 +361,7 @@ jobs:
   build-linux-amd64:
     # if: ${{github.event.inputs.buildos}} == 'linux-amd64'
     environment: release
-    runs-on: linux
+    runs-on: ubuntu-latest
     env:
       OLLAMA_SKIP_MANIFEST_CREATE: '1'
       BUILD_ARCH: amd64
@@ -445,11 +445,11 @@ jobs:
   # Aggregate all the assets and ship a release
   release:
     needs:
-      - build-darwin
-      - build-windows
+      # - build-darwin
+      # - build-windows
       - build-linux-amd64
-      - build-linux-arm64
-    runs-on: linux
+      # - build-linux-arm64
+    runs-on: ubuntu-latest
     environment: release
     permissions:
       contents: write

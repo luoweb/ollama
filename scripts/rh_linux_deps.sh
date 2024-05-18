@@ -27,6 +27,8 @@ if grep -i "centos" /etc/system-release >/dev/null; then
     wget https://cmake.org/files/v3.22/cmake-3.22.1-linux-x86_64.sh && chmod +x *.sh && \
     ./cmake-3.22.1-linux-x86_64.sh --skip-license --prefix=/usr/local/
     ln -s /usr/local/bin/cmake /usr/bin/cmake
+    ln -s /opt/rh/devtoolset-8/root/bin/gcc /usr/bin/gcc
+    ln -s /opt/rh/devtoolset-8/root/bin/g++ /usr/bin/g++
     cmake --version
     gcc --version
     g++ --version

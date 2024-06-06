@@ -57,8 +57,6 @@ type llmServer struct {
 	loadDuration   time.Duration // Record how long it took the model to load
 	loadProgress   float32
 
-	*llamaModel
-
 	sem *semaphore.Weighted
 }
 
@@ -87,7 +85,6 @@ func NewLlamaServer(gpus gpu.GpuInfoList, model string, ggml *GGML, adapters, pr
 	var systemMemory uint64
 	gpuCount := len(gpus)
 	if (len(gpus) == 1 && gpus[0].Library == "cpu") || opts.NumGPU == 0 {
-
 		// TODO evaluate system memory to see if we should block the load, or force an unload of another CPU runner
 
 		cpuRunner = serverForCpu()
@@ -106,21 +103,22 @@ func NewLlamaServer(gpus gpu.GpuInfoList, model string, ggml *GGML, adapters, pr
 		var layers int
 		layers, estimatedVRAM, estimatedTotal = EstimateGPULayers(gpus, ggml, projectors, opts)
 
-		if gpus[0].Library == "metal" && estimatedVRAM > systemMemory {
+		switch {
+		case gpus[0].Library == "metal" && estimatedVRAM > systemMemory:
 			// disable partial offloading when model is greater than total system memory as this
 			// can lead to locking up the system
 			opts.NumGPU = 0
-		} else if gpus[0].Library != "metal" && layers == 0 {
+		case gpus[0].Library != "metal" && layers == 0:
 			// Don't bother loading into the GPU if no layers can fit
 			cpuRunner = serverForCpu()
 			gpuCount = 0
-		} else if opts.NumGPU < 0 && layers > 0 && gpus[0].Library != "cpu" {
+		case opts.NumGPU < 0 && layers > 0 && gpus[0].Library != "cpu":
 			opts.NumGPU = layers
 		}
 	}
 
 	// Loop through potential servers
-	finalErr := fmt.Errorf("no suitable llama servers found")
+	finalErr := errors.New("no suitable llama servers found")
 
 	if len(adapters) > 1 {
 		return nil, errors.New("ollama supports only one lora adapter, but multiple were provided")
@@ -234,7 +232,7 @@ func NewLlamaServer(gpus gpu.GpuInfoList, model string, ggml *GGML, adapters, pr
 
 	params = append(params, "--parallel", fmt.Sprintf("%d", numParallel))
 
-	for i := 0; i < len(servers); i++ {
+	for i := range len(servers) {
 		dir := availableServers[servers[i]]
 		if dir == "" {
 			// Shouldn't happen
@@ -286,7 +284,7 @@ func NewLlamaServer(gpus gpu.GpuInfoList, model string, ggml *GGML, adapters, pr
 
 		server := filepath.Join(dir, "ollama_llama_server")
 		if runtime.GOOS == "windows" {
-			server = server + ".exe"
+			server += ".exe"
 		}
 
 		// Detect tmp cleaners wiping out the file
@@ -311,14 +309,13 @@ func NewLlamaServer(gpus gpu.GpuInfoList, model string, ggml *GGML, adapters, pr
 			totalLayers:    ggml.KV().BlockCount() + 1,
 			gpuCount:       gpuCount,
 			done:           make(chan error, 1),
-			llamaModel:     newLlamaModel(model),
 		}
 
 		s.cmd.Env = os.Environ()
 		s.cmd.Stdout = os.Stdout
 		s.cmd.Stderr = s.status
 
-		visibleDevicesEnv, visibleDevicesEnvVal := gpu.GpuInfoList(gpus).GetVisibleDevicesEnv()
+		visibleDevicesEnv, visibleDevicesEnvVal := gpus.GetVisibleDevicesEnv()
 		pathEnvVal := strings.Join(libraryPaths, string(filepath.ListSeparator))
 
 		// Update or add the path and visible devices variable with our adjusted version
@@ -462,7 +459,7 @@ func (s *llmServer) getServerStatus(ctx context.Context) (ServerStatus, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return ServerStatusNotResponding, fmt.Errorf("server not responding")
+			return ServerStatusNotResponding, errors.New("server not responding")
 		}
 		return ServerStatusError, fmt.Errorf("health resp: %w", err)
 	}
@@ -849,12 +846,12 @@ func (s *llmServer) Embedding(ctx context.Context, prompt string) ([]float64, er
 		return nil, fmt.Errorf("unexpected server status: %s", status.ToString())
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(EmbeddingRequest{Content: prompt}); err != nil {
+	data, err := json.Marshal(TokenizeRequest{Content: prompt})
+	if err != nil {
 		return nil, fmt.Errorf("error marshaling embed data: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/embedding", s.port), &b)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/embedding", s.port), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("error creating embed request: %w", err)
 	}
@@ -884,12 +881,108 @@ func (s *llmServer) Embedding(ctx context.Context, prompt string) ([]float64, er
 	return embedding.Embedding, nil
 }
 
+type TokenizeRequest struct {
+	Content string `json:"content"`
+}
+
+type TokenizeResponse struct {
+	Tokens []int `json:"tokens"`
+}
+
 func (s *llmServer) Tokenize(ctx context.Context, content string) ([]int, error) {
-	return s.llamaModel.Tokenize(content), nil
+	// Make sure the server is ready
+	status, err := s.getServerStatus(ctx)
+	if err != nil {
+		return nil, err
+	} else if status != ServerStatusReady && status != ServerStatusNoSlotsAvailable {
+		return nil, fmt.Errorf("unexpected server status: %s", status.ToString())
+	}
+
+	data, err := json.Marshal(TokenizeRequest{Content: content})
+	if err != nil {
+		return nil, fmt.Errorf("marshaling encode data: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/tokenize", s.port), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, fmt.Errorf("encode request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do encode request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read encode request: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		log.Printf("llm encode error: %s", body)
+		return nil, fmt.Errorf("%s", body)
+	}
+
+	var encoded TokenizeResponse
+	if err := json.Unmarshal(body, &encoded); err != nil {
+		return nil, fmt.Errorf("unmarshal encode response: %w", err)
+	}
+
+	return encoded.Tokens, nil
+}
+
+type DetokenizeRequest struct {
+	Tokens []int `json:"tokens"`
+}
+
+type DetokenizeResponse struct {
+	Content string `json:"content"`
 }
 
 func (s *llmServer) Detokenize(ctx context.Context, tokens []int) (string, error) {
-	return s.llamaModel.Detokenize(tokens), nil
+	// Make sure the server is ready
+	status, err := s.getServerStatus(ctx)
+	if err != nil {
+		return "", err
+	} else if status != ServerStatusReady && status != ServerStatusNoSlotsAvailable {
+		return "", fmt.Errorf("unexpected server status: %s", status.ToString())
+	}
+
+	data, err := json.Marshal(DetokenizeRequest{Tokens: tokens})
+	if err != nil {
+		return "", fmt.Errorf("marshaling decode data: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/detokenize", s.port), bytes.NewBuffer(data))
+	if err != nil {
+		return "", fmt.Errorf("decode request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("do decode request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read decode request: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		log.Printf("llm decode error: %s", body)
+		return "", fmt.Errorf("%s", body)
+	}
+
+	var decoded DetokenizeResponse
+	if err := json.Unmarshal(body, &decoded); err != nil {
+		return "", fmt.Errorf("unmarshal encode response: %w", err)
+	}
+
+	return decoded.Content, nil
 }
 
 func (s *llmServer) Close() error {
@@ -905,10 +998,6 @@ func (s *llmServer) Close() error {
 		}
 
 		slog.Debug("llama server stopped")
-	}
-
-	if s.llamaModel != nil {
-		s.llamaModel.Close()
 	}
 
 	return nil

@@ -4,6 +4,12 @@ on:
   release:
     types: [released]
 
+env:
+  # Use docker.io for Docker Hub if empty
+  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY  || 'quay.io' }}
+  DOCKERHUB_USER: ${{ vars.DOCKER_USER || 'luweb' }} # For safty consideration, passing registry password by github action secrets is needed.
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }} 
+
 jobs:
   update-latest:
     environment: release
@@ -13,12 +19,13 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ env.DOCKERHUB_USER }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
       - name: Tag images as latest
         env:
           PUSH: "1"
-          DOCKER_ORG: ${{ vars.DOCKER_USER }}
+          DOCKER_ORG: ${{ env.DOCKERHUB_USER }}
         shell: bash
         run: |
           export "VERSION=${GITHUB_REF_NAME#v}"
